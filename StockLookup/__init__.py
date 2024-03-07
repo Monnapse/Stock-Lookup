@@ -6,13 +6,52 @@
 
 import requests
 import time
-import ProxyApiManager as PAM
+import random
 
 wait_time = 20
 
+# PAM Package
+class NewProxyApi:
+    def __init__(self, name) -> None:
+        self.name = name
+        
+        self.base_urls = []
+        self.subs = {}
+    def __str__(self) -> str:
+        return self.name
+    def add_base(self, url) -> None:
+        self.base_urls.append(url)
+    def add_base_urls(self, urls: list):
+        for i in urls:
+            self.add_base(i)
+    def get_base_url(self) -> str:
+        return self.base_urls[random.randint(0, len(self.base_urls)-1)]
+    def add_sub(self, name: str):
+        if self.subs.get(name):
+            # Already exists
+            return None
+        else:
+            self.subs[name] = []
+    def add_sub_url(self, sub_name: str, url: str):
+        
+        self.subs[sub_name].append(url)
+
+        
+    def add_sub_urls(self, sub_name: str, urls: list):
+        
+        for i in urls:
+            self.add_sub_url(sub_name, i)
+        
+    def get_sub_url(self, sub_name):
+        
+        return self.subs[sub_name][random.randint(0, len(self.subs[sub_name])-1)]
+        
+    def get_full_url(self, sub_name):
+        return self.get_base_url()+self.get_sub_url(sub_name)
+
 lookup_sub = "stock_lookup"
 
-yahoo_proxy = PAM.NewProxyApi("yahoo")
+yahoo_proxy = NewProxyApi("yahoo")
 yahoo_proxy.add_base_urls([
     "https://query1.finance.yahoo.com", "https://query2.finance.yahoo.com"
 ])
@@ -26,17 +65,15 @@ def get_stock(symbol):
 
     # request
     timestamp = int(time.time())
-    #print(yahoo_proxy.get_full_url(lookup_sub).format(symbol=symbol, timestamp=timestamp))
+    
     url = yahoo_proxy.get_full_url(lookup_sub).format(symbol=symbol, timestamp=timestamp)
-    print(url)
+    
     headers = {
         "User-Agent": "curl/7.68.0"
     }
     response = requests.get(url, headers=headers)
-    #print(response.headers)
-    #print(response.content)
     response_json = response.json()
-    #print(response_json["chart"]["result"][0]["meta"]["regularMarketPrice"])
+
     if response_json == None or response_json == 'NoneType': return None
     
     result = response_json["chart"]["result"]
