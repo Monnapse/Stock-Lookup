@@ -7,7 +7,7 @@ import random
 class NewProxyApi:
     def __init__(self, name) -> None:
         self.name = name
-        
+        #self.url_index = 0
         self.base_urls = []
         self.subs = {}
     def __str__(self) -> str:
@@ -26,19 +26,24 @@ class NewProxyApi:
         else:
             self.subs[name] = []
     def add_sub_url(self, sub_name: str, url: str):
-        
+        #if self.subs.get(sub_name):
         self.subs[sub_name].append(url)
-
+        #else:
+        #    # sub doesnt exist
+        #    return None
         
     def add_sub_urls(self, sub_name: str, urls: list):
-        
+        #if self.subs.get(sub_name):
         for i in urls:
             self.add_sub_url(sub_name, i)
-        
+        #else:
+        #    # sub doesnt exist
+        #    return None
     def get_sub_url(self, sub_name):
-        
+        #if self.subs.get(sub_name):
         return self.subs[sub_name][random.randint(0, len(self.subs[sub_name])-1)]
-        
+        #else:
+        #    # sub doesnt exist
+        #    return None
     def get_full_url(self, sub_name):
         return self.get_base_url()+self.get_sub_url(sub_name)
-        

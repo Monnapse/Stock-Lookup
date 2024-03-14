@@ -41,27 +41,27 @@ class basic_stock_info:
     exchange_name = str
 
 class stock_info:
-    symbol = str
-    basic = dict
-    quarterly_market_cap = str
-    trailing_market_cap = str
-    quarterly_enterprise_value = str
-    trailing_enterprise_value = str
-    quarterly_pe_ratio = str
-    trailing_pe_ratio = str
-    quarterly_forward_pe_ratio = str
-    trailing_forward_pe_ratio = str
-    quarterly_peg_ratio = str
-    trailing_peg_ratio = str
-    quarterly_ps_ratio = str
-    trailing_ps_ratio = str
-    quarterly_pb_ratio = str
-    trailing_pb_ratio = str
-    quarterly_enterprises_value_revenue_ratio = str
-    trailing_enterprises_value_revenue_ratio = str
-    quarterly_enterprises_value_ebitda_ratio = str
-    trailing_enterprises_value_ebitda_ratio = str
-    analyst_rating = str
+    symbol = None
+    basic = None
+    quarterly_market_cap = None
+    trailing_market_cap = None
+    quarterly_enterprise_value = None
+    trailing_enterprise_value = None
+    quarterly_pe_ratio = None
+    trailing_pe_ratio = None
+    quarterly_forward_pe_ratio = None
+    trailing_forward_pe_ratio = None
+    quarterly_peg_ratio = None
+    trailing_peg_ratio = None
+    quarterly_ps_ratio = None
+    trailing_ps_ratio = None
+    quarterly_pb_ratio = None
+    trailing_pb_ratio = None
+    quarterly_enterprises_value_revenue_ratio = None
+    trailing_enterprises_value_revenue_ratio = None
+    quarterly_enterprises_value_ebitda_ratio = None
+    trailing_enterprises_value_ebitda_ratio = None
+    analyst_rating = None
 
 def basic_stock_lookup(symbol) -> basic_stock_info:
     """
@@ -162,6 +162,7 @@ def stock_lookup(symbol, period1: int=None, period2: int=None) -> stock_info:
     }
     response = requests.get(url, headers=headers)
     response_json = response.json()
+    #print(response_json)
     if response_json != None and response_json != 'NoneType':
         results = response_json["timeseries"]["result"]
         for i in results:
@@ -170,8 +171,10 @@ def stock_lookup(symbol, period1: int=None, period2: int=None) -> stock_info:
 
             if i.get(meta_type):
                 meta_type_list = i[meta_type]
-                meta_value = meta_type_list[len(meta_type_list)-1]["reportedValue"]["fmt"]
-                setattr(stock, format_camel_case(meta_type), meta_value)
+                meta_value = meta_type_list[len(meta_type_list)-1]
+                if meta_value :
+                    meta_value = meta_value["reportedValue"]["fmt"]
+                    setattr(stock, format_camel_case(meta_type), meta_value)
 
     # Nasdaq Data
     url = nasdaq_api.get_full_url(analyst_rating).format(symbol=symbol)
@@ -190,3 +193,41 @@ def stock_lookup(symbol, period1: int=None, period2: int=None) -> stock_info:
             stock_info.analyst_rating = data["meanRatingType"]
             
     return stock
+
+def get_stock_price_points(symbol: str, period1: int=None, period2: int=None) -> list:
+    url = yahoo_api.get_full_url(basic_lookup_sub).format(symbol=symbol, period1=str(period1), period2=str(period2))
+    print(url)
+    headers = {
+        "User-Agent": "curl/7.68.0"
+    }
+    response = requests.get(url, headers=headers)
+    #print(response.headers)
+    #print(response.content)
+    response_json = response.json()
+    #print(response_json["chart"]["result"][0]["meta"]["regularMarketPrice"])
+    if response_json == None or response_json == 'NoneType' or not response_json.get("chart"): return None
+    
+    result = response_json["chart"]["result"]
+
+    if result == None: return
+    data = None
+    try:
+        data = result[0]["indicators"]["quote"][0].get("open")
+    except:
+        return
+    if not data: return
+    #nodes = ""
+    price_points = []
+    index = 0
+    for i in data:
+        if i == None: 
+            continue
+        #if index != 0:
+        #    nodes = nodes+","
+
+        index += 1
+
+        #print(format_time(index))
+        #nodes = nodes+str(i)+","+str(index)
+        price_points.append([i, index])
+    return price_points
