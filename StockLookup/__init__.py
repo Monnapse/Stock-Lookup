@@ -79,6 +79,7 @@ def basic_stock_lookup(symbol) -> basic_stock_info:
     response = requests.get(url, headers=headers)
     #print(response.headers)
     #print(response.content)
+    if not response: return
     response_json = response.json()
     #print(response_json["chart"]["result"][0]["meta"]["regularMarketPrice"])
     if response_json == None or response_json == 'NoneType': return None
@@ -161,6 +162,7 @@ def stock_lookup(symbol, period1: int=None, period2: int=None) -> stock_info:
         "User-Agent": "curl/7.68.0"
     }
     response = requests.get(url, headers=headers)
+    if not response: return
     response_json = response.json()
     #print(response_json)
     if response_json != None and response_json != 'NoneType':
@@ -177,20 +179,23 @@ def stock_lookup(symbol, period1: int=None, period2: int=None) -> stock_info:
                     setattr(stock, format_camel_case(meta_type), meta_value)
 
     # Nasdaq Data
-    url = nasdaq_api.get_full_url(analyst_rating).format(symbol=symbol)
+    try:
+        url = nasdaq_api.get_full_url(analyst_rating).format(symbol=symbol)
 
-    analyst_headers = {
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        "User-Agent":"Java-http-client/"
-    }
-    response = requests.get(url, headers=analyst_headers)
-
-    response_json = response.json()
-    if response_json != None and response_json != 'NoneType':
-        data = response_json["data"]
-        if data:
-            stock_info.analyst_rating = data["meanRatingType"]
+        analyst_headers = {
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "User-Agent":"Java-http-client/"
+        }
+        response = requests.get(url, headers=analyst_headers)
+        if not response: return
+        response_json = response.json()
+        if response_json != None and response_json != 'NoneType':
+            data = response_json["data"]
+            if data:
+                stock.analyst_rating = data["meanRatingType"]
+    except:
+        pass
             
     return stock
 
@@ -203,6 +208,7 @@ def get_stock_price_points(symbol: str, period1: int=None, period2: int=None) ->
     response = requests.get(url, headers=headers)
     #print(response.headers)
     #print(response.content)
+    if not response: return
     response_json = response.json()
     #print(response_json["chart"]["result"][0]["meta"]["regularMarketPrice"])
     if response_json == None or response_json == 'NoneType' or not response_json.get("chart"): return None
@@ -212,7 +218,7 @@ def get_stock_price_points(symbol: str, period1: int=None, period2: int=None) ->
     if result == None: return
     data = None
     try:
-        data = result[0]["indicators"]["quote"][0].get("open")
+        data = result[0]["indicators"]["quote"][0].get("close")
     except:
         return
     if not data: return
